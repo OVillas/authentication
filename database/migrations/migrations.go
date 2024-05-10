@@ -4,8 +4,8 @@ import (
 	"log"
 
 	"github.com/OVillas/autentication/config"
-	"github.com/OVillas/autentication/config/database"
-	"github.com/OVillas/autentication/models"
+	"github.com/OVillas/autentication/database"
+	"github.com/OVillas/autentication/domain"
 )
 
 func main() {
@@ -17,7 +17,7 @@ func main() {
 	}
 
 	err = db.AutoMigrate(
-		&models.User{},
+		&domain.User{},
 	)
 
 	if err != nil {

@@ -1,4 +1,4 @@
-package models
+package domain
 
 import (
 	"errors"
@@ -21,6 +21,17 @@ var (
 	ErrDeleteUser               = errors.New("error to delete user")
 	ErrSameEmail                = errors.New("the email cannot be the same as the previous one")
 	ErrUserNotAuthorized        = errors.New("user not authorized to action")
+	ErrPasswordNotMatch         = errors.New("invalid password")
+	ErrGenToken                 = errors.New("error to generate new token jwt")
+	ErrUnexpectedSigningMethod  = errors.New("unexpected signature method")
+	ErrInvalidToken             = errors.New("token invalid")
+	ErrIdNotFoundInPermissions  = errors.New("error to get id in token")
+	ErrIdIsNotAString           = errors.New("'id' field value is not a string")
+	ErrUpdatePassword           = errors.New("error to update password")
+	ErrToSendConfirmationCode   = errors.New("error to send confirmation code")
+	ErrInvalidOTP               = errors.New("wrong or expired OTP")
+	ErrOTPNotFound              = errors.New("not found OTP from email")
+	ErrUserIDMismatch           = errors.New("user ID mismatch")
 )
 
 type User struct {
@@ -67,14 +78,49 @@ type UserInfosResponse struct {
 	Nick string
 }
 
+type Login struct {
+	Username string `json:"username,omitempty" validate:"required,min=6"`
+	Password string `json:"password,omitempty" validate:"required"`
+}
+
+type UpdatePassword struct {
+	Current string `json:"current,omitempty" validate:"required,min=6,containsany=!@#&?"`
+	New     string `json:"new,omitempty" validate:"required,min=6,containsany=!@#&?"`
+}
+
+type ResetPassword struct {
+	New     string `json:"new,omitempty" validate:"required,min=6,containsany=!@#&?"`
+	Confirm string `json:"confirm,omitempty" validate:"required,min=6,containsany=!@#&?"`
+}
+
+type ConfirmationCode struct {
+	Code       string
+	ExpiryTime time.Time
+}
+
+type ConfirmCode struct {
+	Email string `json:"email,omitempty" validate:"required,email"`
+	Code  string `json:"code,omitempty" validate:"required"`
+}
+
+type RequestResetPassword struct {
+	Email string `json:"email,omitempty" validate:"required,email"`
+}
+
 type UserHandler interface {
-	Create(c echo.Context) error
-	GetById(c echo.Context) error
-	GetByNameOrNick(c echo.Context) error
-	GetByEmail(c echo.Context) error
-	GetAll(c echo.Context) error
-	Update(c echo.Context) error
-	Delete(c echo.Context) error
+	Create(ctx echo.Context) error
+	GetById(ctx echo.Context) error
+	GetByNameOrNick(ctx echo.Context) error
+	GetByEmail(ctx echo.Context) error
+	GetAll(ctx echo.Context) error
+	Update(ctx echo.Context) error
+	Delete(ctx echo.Context) error
+	Login(ctx echo.Context) error
+	UpdatePassword(ctx echo.Context) error
+	ConfirmEmail(ctx echo.Context) error
+	ForgotPassword(ctx echo.Context) error
+	ConfirmResetPasswordCode(ctx echo.Context) error
+	ResetPassword(ctx echo.Context) error
 }
 
 type UserService interface {
@@ -86,6 +132,13 @@ type UserService interface {
 	GetAll() ([]UserResponse, error)
 	Update(id string, userUpdate UserUpdatePayLoad) error
 	Delete(id string) error
+	Login(login Login) (string, error)
+	UpdatePassword(id string, updatePassword UpdatePassword) error
+	SendConfirmationCode(email string) error
+	ConfirmEmail(confirmCode ConfirmCode) error
+	ConfirmResetPasswordCode(confirmCode ConfirmCode) (string, error)
+	ResetPassword(userId string, resetPassword ResetPassword) error
+	CheckUserIDMatch(idFromToken string) error
 }
 
 type UserRepository interface {
@@ -150,4 +203,29 @@ func (u *User) ToUserInfosResponse() *UserInfosResponse {
 		Name: u.Name,
 		Nick: u.Username,
 	}
+}
+
+func (l *Login) Validate() error {
+	validate := validator.New()
+	return validate.Struct(l)
+}
+
+func (rrp *RequestResetPassword) Validate() error {
+	validate := validator.New()
+	return validate.Struct(rrp)
+}
+
+func (up *UpdatePassword) Validate() error {
+	validate := validator.New()
+	return validate.Struct(up)
+}
+
+func (ce *ConfirmCode) Validate() error {
+	validate := validator.New()
+	return validate.Struct(ce)
+}
+
+func (rp *ResetPassword) Validate() error {
+	validate := validator.New()
+	return validate.Struct(rp)
 }

@@ -1,43 +1,31 @@
 package handler
 
 import (
-	"github.com/OVillas/autentication/config"
+	"github.com/OVillas/autentication/domain"
 	"github.com/OVillas/autentication/middleware"
-	"github.com/OVillas/autentication/repository"
-	"github.com/OVillas/autentication/service"
 	"github.com/labstack/echo/v4"
+	"github.com/samber/do"
 )
 
-func SetupRoutes(e *echo.Echo) {
-	configureUserRoutes(e)
-	configureAuthenticationRoutes(e)
+func SetupRoutes(e *echo.Echo, i *do.Injector) {
+	configureUserRoutes(e, i)
 }
 
-func configureUserRoutes(e *echo.Echo) {
-	userRepository := repository.NewUserRepository()
-	userService := service.NewUserService(userRepository)
-	emailService := service.NewEmailService("Social Network", config.EmailSender, config.EMailSenderPassword)
-	authenticationService := service.NewAuthenticationService(userRepository, emailService)
-	userHandler := NewUserHandler(userService, authenticationService)
+func configureUserRoutes(e *echo.Echo, i *do.Injector) {
+	userHandler := do.MustInvoke[domain.UserHandler](i)
 
 	group := e.Group("v1/user")
 	group.POST("", userHandler.Create)
-	group.GET("", userHandler.GetAll)
-	group.GET("/:id", userHandler.GetById)
-	group.GET("/name", userHandler.GetByNameOrNick)
-	group.GET("/email", userHandler.GetByEmail)
+	group.GET("", userHandler.GetAll, middleware.CheckLoggedIn)
+	group.GET("/:id", userHandler.GetById, middleware.CheckLoggedIn)
+	group.GET("/name", userHandler.GetByNameOrNick, middleware.CheckLoggedIn)
+	group.GET("/email", userHandler.GetByEmail, middleware.CheckLoggedIn)
 	group.PUT("/:id", userHandler.Update, middleware.CheckLoggedIn)
 	group.DELETE("/:id", userHandler.Delete, middleware.CheckLoggedIn)
-}
-
-func configureAuthenticationRoutes(e *echo.Echo) {
-	userRepository := repository.NewUserRepository()
-	emailService := service.NewEmailService("Social Network", config.EmailSender, config.EMailSenderPassword)
-	authenticationService := service.NewAuthenticationService(userRepository, emailService)
-	authenticationHandler := NewAuthenticationHandler(authenticationService)
-
-	group := e.Group("v1/authentication")
-	group.POST("/login", authenticationHandler.Login)
-	group.PATCH("/user/:userId/password", authenticationHandler.UpdatePassword, middleware.CheckLoggedIn)
-	group.PATCH("/email/confirm", authenticationHandler.ConfirmEmail)
+	group.POST("/login", userHandler.Login)
+	group.PATCH("/:id/password", userHandler.UpdatePassword, middleware.CheckLoggedIn)
+	group.PATCH("/email/confirm", userHandler.ConfirmEmail)
+	group.POST("/password/forgot", userHandler.ForgotPassword)
+	group.POST("/password/confirm", userHandler.ConfirmResetPasswordCode)
+	group.POST("/password/reset", userHandler.ResetPassword)
 }

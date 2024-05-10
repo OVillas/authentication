@@ -17,7 +17,8 @@ var (
 	EmailSender           = ""
 	SMTPPort              = 0
 	SMTPServer            = ""
-	EMailSenderPassword   = ""
+	EmailSenderPassword   = ""
+	EmailSenderName       = ""
 )
 
 func Load() {
@@ -48,5 +49,6 @@ func Load() {
 
 	SMTPServer = os.Getenv("SMTP_SERVER")
 	EmailSender = os.Getenv("EMAIL_SENDER")
-	EMailSenderPassword = os.Getenv("EMAIL_SENDER_PASSWORD")
+	EmailSenderPassword = os.Getenv("EMAIL_SENDER_PASSWORD")
+	EmailSenderName = os.Getenv("EMAIL_SENDER_NAME")
 }

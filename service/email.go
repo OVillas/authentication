@@ -5,23 +5,26 @@ import (
 	"strconv"
 
 	"github.com/OVillas/autentication/config"
-	"github.com/OVillas/autentication/models"
+	"github.com/OVillas/autentication/domain"
+	"github.com/samber/do"
 )
 
 type emailService struct {
-	gmailSender models.GmailSender
+	i           *do.Injector
+	gmailSender domain.GmailSender
 }
 
-func NewEmailService(name string, fromEmailAddress string, fromEmailPassword string) models.EmailService {
-	gmailSender := models.GmailSender{
-		Name:              name,
-		FromEmailAddress:  fromEmailAddress,
-		FromEmailPassword: fromEmailPassword,
+func NewEmailService(i *do.Injector) (domain.EmailService, error) {
+	gmailSender := domain.GmailSender{
+		Name:              config.EmailSenderName,
+		FromEmailAddress:  config.EmailSender,
+		FromEmailPassword: config.EmailSenderPassword,
 	}
 
 	return &emailService{
+		i:           i,
 		gmailSender: gmailSender,
-	}
+	}, nil
 }
 
 func (sender *emailService) SendEmail(subject string, content string, to []string) error {
