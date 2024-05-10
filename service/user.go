@@ -4,6 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/OVillas/autentication/models"
+	"github.com/OVillas/autentication/secure"
 )
 
 type userService struct {
@@ -34,7 +35,7 @@ func (us userService) Create(userPayLoad models.UserPayLoad) error {
 		return models.ErrUserAlreadyRegistered
 	}
 
-	hashedPassword, err := Hash(userPayLoad.Password)
+	hashedPassword, err := secure.Hash(userPayLoad.Password)
 	if err != nil {
 		log.Error("Error trying to hashed password")
 		return models.ErrHashPassword
@@ -109,7 +110,7 @@ func (us userService) GetByNameOrNick(name string) ([]models.UserResponse, error
 	log := slog.With(
 		slog.String("service", "user"),
 		slog.String("func", "GetAll"))
-	
+
 	log.Info("GetAll service initiated")
 
 	users, err := us.userRepository.GetByNameOrNick(name)
@@ -181,7 +182,7 @@ func (us userService) Update(id string, userUpdate models.UserUpdatePayLoad) err
 	log := slog.With(
 		slog.String("service", "user"),
 		slog.String("func", "update"))
-	
+
 	log.Info("Update service initiated")
 
 	user, err := us.userRepository.GetById(id)
@@ -220,7 +221,7 @@ func (us userService) Delete(id string) error {
 	log := slog.With(
 		slog.String("service", "user"),
 		slog.String("func", "delete"))
-	
+
 	log.Info("Delete service initiated")
 
 	user, err := us.userRepository.GetById(id)

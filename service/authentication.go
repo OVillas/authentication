@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/OVillas/autentication/models"
+	"github.com/OVillas/autentication/secure"
 	"github.com/OVillas/autentication/util"
 )
 
@@ -55,7 +56,7 @@ func (a *authenticationService) Login(login models.Login) (string, error) {
 		return "", models.ErrUserNotFound
 	}
 
-	if err := CheckPassword(user.Password, login.Password); err != nil {
+	if err := secure.CheckPassword(user.Password, login.Password); err != nil {
 		log.Warn("invalid password for email: " + user.Email)
 		return "", models.ErrPasswordNotMatch
 	}
@@ -88,12 +89,12 @@ func (a *authenticationService) UpdatePassword(id string, updatePassword models.
 		return models.ErrUserNotFound
 	}
 
-	if err := CheckPassword(user.Password, updatePassword.Current); err != nil {
+	if err := secure.CheckPassword(user.Password, updatePassword.Current); err != nil {
 		log.Warn("current password not match ")
 		return models.ErrPasswordNotMatch
 	}
 
-	newHashedPassword, err := Hash(updatePassword.New)
+	newHashedPassword, err := secure.Hash(updatePassword.New)
 	if err != nil {
 		log.Error("Error trying to hashed password")
 		return models.ErrHashPassword
@@ -212,7 +213,7 @@ func (a *authenticationService) ResetPassword(userId string, resetPassword model
 		slog.String("service", "authentication"))
 
 	log.Info("Reset password service initiated")
-	
+
 	user, err := a.userRepository.GetById(userId)
 	if err != nil {
 		log.Error("Failed to obtain user by id")
@@ -229,7 +230,7 @@ func (a *authenticationService) ResetPassword(userId string, resetPassword model
 		return models.ErrPasswordNotMatch
 	}
 
-	newHashedPassword, err := Hash(resetPassword.New)
+	newHashedPassword, err := secure.Hash(resetPassword.New)
 	if err != nil {
 		log.Error("Error trying to hashed password")
 		return models.ErrHashPassword
