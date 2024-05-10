@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/OVillas/autentication/config"
-	"github.com/OVillas/autentication/config/database"
+	"github.com/OVillas/autentication/database"
 	"github.com/OVillas/autentication/domain"
 )
 

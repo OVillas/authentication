@@ -6,13 +6,15 @@ import (
 
 	"github.com/OVillas/autentication/config"
 	"github.com/OVillas/autentication/domain"
+	"github.com/samber/do"
 )
 
 type emailService struct {
+	i           *do.Injector
 	gmailSender domain.GmailSender
 }
 
-func NewEmailService() domain.EmailService {
+func NewEmailService(i *do.Injector) (domain.EmailService, error) {
 	gmailSender := domain.GmailSender{
 		Name:              config.EmailSenderName,
 		FromEmailAddress:  config.EmailSender,
@@ -20,8 +22,9 @@ func NewEmailService() domain.EmailService {
 	}
 
 	return &emailService{
+		i:           i,
 		gmailSender: gmailSender,
-	}
+	}, nil
 }
 
 func (sender *emailService) SendEmail(subject string, content string, to []string) error {

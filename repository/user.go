@@ -6,15 +6,21 @@ import (
 	"time"
 
 	"github.com/OVillas/autentication/domain"
+	"github.com/samber/do"
 	"gorm.io/gorm"
 )
 
 type userRepository struct {
+	i  *do.Injector
 	db *gorm.DB
 }
 
-func NewUserRepository(db *gorm.DB) domain.UserRepository {
-	return &userRepository{db: db}
+func NewUserRepository(i *do.Injector) (domain.UserRepository, error) {
+	db := do.MustInvoke[*gorm.DB](i)
+	return &userRepository{
+		db: db,
+		i:  i,
+	}, nil
 }
 
 func (ur *userRepository) Create(user domain.User) error {

@@ -8,6 +8,7 @@ import (
 	"github.com/OVillas/autentication/domain"
 	"github.com/OVillas/autentication/secure"
 	"github.com/OVillas/autentication/util"
+	"github.com/samber/do"
 )
 
 var confirmationsCodes map[string]domain.ConfirmationCode
@@ -17,15 +18,19 @@ func init() {
 }
 
 type userService struct {
+	i              *do.Injector
 	userRepository domain.UserRepository
 	emailService   domain.EmailService
 }
 
-func NewUserService(userRepository domain.UserRepository, emailService domain.EmailService) domain.UserService {
+func NewUserService(i *do.Injector) (domain.UserService, error) {
+	userRepository := do.MustInvoke[domain.UserRepository](i)
+	emailService := do.MustInvoke[domain.EmailService](i)
 	return &userService{
+		i:              i,
 		userRepository: userRepository,
 		emailService:   emailService,
-	}
+	}, nil
 }
 
 func (us *userService) Create(userPayLoad domain.UserPayLoad) error {

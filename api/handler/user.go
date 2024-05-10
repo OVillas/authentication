@@ -9,22 +9,26 @@ import (
 	"github.com/OVillas/autentication/util"
 	"github.com/badoux/checkmail"
 	"github.com/labstack/echo/v4"
+	"github.com/samber/do"
 )
 
 type userHandler struct {
+	i           *do.Injector
 	userService domain.UserService
 }
 
-func NewUserHandler(userService domain.UserService) domain.UserHandler {
+func NewUserHandler(i *do.Injector) (domain.UserHandler, error) {
+	userService := do.MustInvoke[domain.UserService](i)
 	return &userHandler{
+		i:           i,
 		userService: userService,
-	}
+	}, nil
 }
 
 func (uh *userHandler) Create(c echo.Context) error {
 	log := slog.With(
 		slog.String("func", "Create"),
-		slog.String("handler", "authentication"))
+		slog.String("handler", "user"))
 
 	var userPayLoad domain.UserPayLoad
 	if err := c.Bind(&userPayLoad); err != nil {
