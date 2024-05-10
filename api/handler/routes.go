@@ -1,27 +1,18 @@
 package handler
 
 import (
-	"github.com/OVillas/autentication/database"
+	"github.com/OVillas/autentication/domain"
 	"github.com/OVillas/autentication/middleware"
-	"github.com/OVillas/autentication/repository"
-	"github.com/OVillas/autentication/service"
 	"github.com/labstack/echo/v4"
+	"github.com/samber/do"
 )
 
-func SetupRoutes(e *echo.Echo) {
-	configureUserRoutes(e)
+func SetupRoutes(e *echo.Echo, i *do.Injector) {
+	configureUserRoutes(e, i)
 }
 
-func configureUserRoutes(e *echo.Echo) {
-	db, err := database.NewMysqlConnection()
-	if err != nil {
-		panic(err)
-	}
-
-	userRepository := repository.NewUserRepository(db)
-	emailService := service.NewEmailService()
-	userService := service.NewUserService(userRepository, emailService)
-	userHandler := NewUserHandler(userService)
+func configureUserRoutes(e *echo.Echo, i *do.Injector) {
+	userHandler := do.MustInvoke[domain.UserHandler](i)
 
 	group := e.Group("v1/user")
 	group.POST("", userHandler.Create)
