@@ -5,18 +5,18 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/OVillas/autentication/models"
+	"github.com/OVillas/autentication/domain"
 	"github.com/OVillas/autentication/util"
 	"github.com/badoux/checkmail"
 	"github.com/labstack/echo/v4"
 )
 
 type userHandler struct {
-	userService           models.UserService
-	authenticationService models.AuthenticationService
+	userService           domain.UserService
+	authenticationService domain.AuthenticationService
 }
 
-func NewUserHandler(userService models.UserService, authenticationService models.AuthenticationService) models.UserHandler {
+func NewUserHandler(userService domain.UserService, authenticationService domain.AuthenticationService) domain.UserHandler {
 	return &userHandler{
 		userService:           userService,
 		authenticationService: authenticationService,
@@ -28,9 +28,9 @@ func (uh *userHandler) Create(c echo.Context) error {
 		slog.String("func", "Create"),
 		slog.String("handler", "authentication"))
 
-	var userPayLoad models.UserPayLoad
+	var userPayLoad domain.UserPayLoad
 	if err := c.Bind(&userPayLoad); err != nil {
-		log.Warn("Failed to bind user data to models")
+		log.Warn("Failed to bind user data to domain")
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
@@ -41,7 +41,7 @@ func (uh *userHandler) Create(c echo.Context) error {
 
 	err := uh.userService.Create(userPayLoad)
 
-	if err != nil && errors.Is(err, models.ErrUserAlreadyRegistered) {
+	if err != nil && errors.Is(err, domain.ErrUserAlreadyRegistered) {
 		log.Warn("There is already a registered user with this email: " + userPayLoad.Email)
 		return c.JSON(http.StatusConflict, err)
 	}
@@ -188,9 +188,9 @@ func (uh *userHandler) Update(c echo.Context) error {
 		return c.NoContent(http.StatusForbidden)
 	}
 
-	var userUpdatePayLoad models.UserUpdatePayLoad
+	var userUpdatePayLoad domain.UserUpdatePayLoad
 	if err := c.Bind(&userUpdatePayLoad); err != nil {
-		log.Warn("Failed to bind user data to models")
+		log.Warn("Failed to bind user data to domain")
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
@@ -215,12 +215,12 @@ func (uh *userHandler) Update(c echo.Context) error {
 
 	err = uh.userService.Update(id, userUpdatePayLoad)
 
-	if err != nil && errors.Is(err, models.ErrUserNotFound) {
+	if err != nil && errors.Is(err, domain.ErrUserNotFound) {
 		log.Warn("user not found to update your information's")
 		return c.JSON(http.StatusNotFound, err)
 	}
 
-	if err != nil && errors.Is(err, models.ErrSameEmail) {
+	if err != nil && errors.Is(err, domain.ErrSameEmail) {
 		log.Warn("user not found to update your information's")
 		return c.JSON(http.StatusNotFound, err)
 	}
@@ -258,7 +258,7 @@ func (uh *userHandler) Delete(c echo.Context) error {
 
 	err = uh.userService.Delete(id)
 
-	if err != nil && errors.Is(err, models.ErrUserNotFound) {
+	if err != nil && errors.Is(err, domain.ErrUserNotFound) {
 		log.Warn("User not found to delete")
 		return c.JSON(http.StatusNotFound, err)
 	}

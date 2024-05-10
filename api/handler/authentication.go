@@ -5,16 +5,16 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/OVillas/autentication/models"
+	"github.com/OVillas/autentication/domain"
 	"github.com/OVillas/autentication/util"
 	"github.com/labstack/echo/v4"
 )
 
 type authenticationHandler struct {
-	authenticationService models.AuthenticationService
+	authenticationService domain.AuthenticationService
 }
 
-func NewAuthenticationHandler(authService models.AuthenticationService) models.AuthenticationHandler {
+func NewAuthenticationHandler(authService domain.AuthenticationService) domain.AuthenticationHandler {
 	return &authenticationHandler{
 		authenticationService: authService,
 	}
@@ -27,9 +27,9 @@ func (a *authenticationHandler) Login(c echo.Context) error {
 
 	log.Info("Login service initiated")
 
-	var login models.Login
+	var login domain.Login
 	if err := c.Bind(&login); err != nil {
-		log.Warn("Failed to bind user data to models")
+		log.Warn("Failed to bind user data to domain")
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
@@ -39,13 +39,13 @@ func (a *authenticationHandler) Login(c echo.Context) error {
 	}
 
 	token, err := a.authenticationService.Login(login)
-	if err != nil && errors.Is(err, models.ErrPasswordNotMatch) {
+	if err != nil && errors.Is(err, domain.ErrPasswordNotMatch) {
 		log.Warn("username or password invalid")
 		return c.NoContent(http.StatusForbidden)
 
 	}
 
-	if err != nil && errors.Is(err, models.ErrUserNotFound) {
+	if err != nil && errors.Is(err, domain.ErrUserNotFound) {
 		log.Warn("User not found with username: " + login.Username)
 		return c.NoContent(http.StatusNotFound)
 
@@ -85,9 +85,9 @@ func (a *authenticationHandler) UpdatePassword(c echo.Context) error {
 		return c.NoContent(http.StatusForbidden)
 	}
 
-	var updatePassword models.UpdatePassword
+	var updatePassword domain.UpdatePassword
 	if err := c.Bind(&updatePassword); err != nil {
-		log.Warn("Failed to bind user data to models")
+		log.Warn("Failed to bind user data to domain")
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
@@ -98,12 +98,12 @@ func (a *authenticationHandler) UpdatePassword(c echo.Context) error {
 
 	err = a.authenticationService.UpdatePassword(userId, updatePassword)
 
-	if err != nil && errors.Is(err, models.ErrUserNotFound) {
+	if err != nil && errors.Is(err, domain.ErrUserNotFound) {
 		log.Error("Error: ", err)
 		return c.JSON(http.StatusNotFound, err)
 	}
 
-	if err != nil && errors.Is(err, models.ErrPasswordNotMatch) {
+	if err != nil && errors.Is(err, domain.ErrPasswordNotMatch) {
 		log.Error("Error: ", err)
 		return c.JSON(http.StatusUnauthorized, err)
 	}
@@ -119,9 +119,9 @@ func (a *authenticationHandler) ConfirmEmail(c echo.Context) error {
 
 	log.Info("ConfirmEmail service initiated")
 
-	var confirmCodeEmail models.ConfirmCode
+	var confirmCodeEmail domain.ConfirmCode
 	if err := c.Bind(&confirmCodeEmail); err != nil {
-		log.Warn("Failed to bind confirmCodeData data to models")
+		log.Warn("Failed to bind confirmCodeData data to domain")
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
@@ -132,7 +132,7 @@ func (a *authenticationHandler) ConfirmEmail(c echo.Context) error {
 
 	err := a.authenticationService.ConfirmEmail(confirmCodeEmail)
 
-	if err != nil && errors.Is(err, models.ErrInvalidOTP) {
+	if err != nil && errors.Is(err, domain.ErrInvalidOTP) {
 		log.Warn("Expired token or wrong token")
 		return c.NoContent(http.StatusUnauthorized)
 	}
@@ -153,9 +153,9 @@ func (a *authenticationHandler) ForgotPassword(c echo.Context) error {
 
 	log.Info("ForgotPassword service initiated")
 
-	var requestResetPassword models.RequestResetPassword
+	var requestResetPassword domain.RequestResetPassword
 	if err := c.Bind(&requestResetPassword); err != nil {
-		log.Warn("Failed to bind requestResetPassword data to models")
+		log.Warn("Failed to bind requestResetPassword data to domain")
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
@@ -180,9 +180,9 @@ func (a *authenticationHandler) ConfirmResetPasswordCode(c echo.Context) error {
 
 	log.Info("ConfirmResetPasswordCode service initiated")
 
-	var confirmCode models.ConfirmCode
+	var confirmCode domain.ConfirmCode
 	if err := c.Bind(&confirmCode); err != nil {
-		log.Warn("Failed to bind confirmCode data to models")
+		log.Warn("Failed to bind confirmCode data to domain")
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
@@ -193,12 +193,12 @@ func (a *authenticationHandler) ConfirmResetPasswordCode(c echo.Context) error {
 
 	token, err := a.authenticationService.ConfirmResetPasswordCode(confirmCode)
 
-	if err != nil && errors.Is(err, models.ErrOTPNotFound) {
+	if err != nil && errors.Is(err, domain.ErrOTPNotFound) {
 		log.Warn("OTP not found")
 		return c.NoContent(http.StatusNotFound)
 	}
 
-	if err != nil && errors.Is(err, models.ErrInvalidOTP) {
+	if err != nil && errors.Is(err, domain.ErrInvalidOTP) {
 		log.Warn("Expired token or wrong token")
 		return c.NoContent(http.StatusUnauthorized)
 	}
@@ -225,9 +225,9 @@ func (a *authenticationHandler) ResetPassword(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, err)
 	}
 
-	var resetPassword models.ResetPassword
+	var resetPassword domain.ResetPassword
 	if err := c.Bind(&resetPassword); err != nil {
-		log.Warn("Failed to bind resetPassword data to models")
+		log.Warn("Failed to bind resetPassword data to domain")
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
@@ -238,12 +238,12 @@ func (a *authenticationHandler) ResetPassword(c echo.Context) error {
 
 	err = a.authenticationService.ResetPassword(userIdFromToken, resetPassword)
 
-	if err != nil && errors.Is(err, models.ErrUserNotFound) {
+	if err != nil && errors.Is(err, domain.ErrUserNotFound) {
 		log.Warn("User not found with this email")
 		return c.NoContent(http.StatusNotFound)
 	}
 
-	if err != nil && errors.Is(err, models.ErrPasswordNotMatch) {
+	if err != nil && errors.Is(err, domain.ErrPasswordNotMatch) {
 		log.Warn("Password and confirm password do not match")
 		return c.NoContent(http.StatusUnprocessableEntity)
 	}

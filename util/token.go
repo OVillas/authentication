@@ -7,14 +7,14 @@ import (
 	"time"
 
 	"github.com/OVillas/autentication/config"
-	"github.com/OVillas/autentication/models"
+	"github.com/OVillas/autentication/domain"
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 )
 
 var table = [...]byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
 
-func CreateToken(user models.User) (string, error) {
+func CreateToken(user domain.User) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"id":    user.ID,
@@ -31,11 +31,11 @@ func CreateToken(user models.User) (string, error) {
 	return tokenString, nil
 }
 
-func CreateResetPasswordToken(user models.User) (string, error) {
+func CreateResetPasswordToken(user domain.User) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id": user.ID,
-		"exp":   time.Now().Add(time.Hour * 6).Unix(),
+		"id":  user.ID,
+		"exp": time.Now().Add(time.Hour * 6).Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(config.SecretKey))
@@ -48,7 +48,7 @@ func CreateResetPasswordToken(user models.User) (string, error) {
 
 func getVerificationKey(token *jwt.Token) (interface{}, error) {
 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-		return nil, models.ErrUnexpectedSigningMethod
+		return nil, domain.ErrUnexpectedSigningMethod
 	}
 
 	return config.SecretKey, nil
@@ -74,21 +74,21 @@ func ExtractUserIdFromToken(c echo.Context) (string, error) {
 
 	permissions, ok := token.Claims.(jwt.MapClaims)
 	if !ok && !token.Valid {
-		return "", models.ErrInvalidToken
+		return "", domain.ErrInvalidToken
 	}
 
 	idInterface, exists := permissions["id"]
 	if !exists {
-		return "", models.ErrIdNotFoundInPermissions
+		return "", domain.ErrIdNotFoundInPermissions
 	}
 
 	id, ok := idInterface.(string)
 	if !ok {
-		return "", models.ErrIdIsNotAString
+		return "", domain.ErrIdIsNotAString
 	}
 
 	if err := IsValidUUID(id); err != nil {
-		return "", models.ErrInvalidId
+		return "", domain.ErrInvalidId
 	}
 
 	return id, nil

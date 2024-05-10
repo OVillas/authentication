@@ -6,17 +6,17 @@ import (
 	"time"
 
 	"github.com/OVillas/autentication/database"
-	"github.com/OVillas/autentication/models"
+	"github.com/OVillas/autentication/domain"
 	"gorm.io/gorm"
 )
 
 type userRepository struct{}
 
-func NewUserRepository() models.UserRepository {
+func NewUserRepository() domain.UserRepository {
 	return userRepository{}
 }
 
-func (ur userRepository) Create(user models.User) error {
+func (ur userRepository) Create(user domain.User) error {
 	log := slog.With(
 		slog.String("func", "Create"),
 		slog.String("repository", "user"))
@@ -45,7 +45,7 @@ func (ur userRepository) Create(user models.User) error {
 	return nil
 }
 
-func (ur userRepository) GetAll() ([]models.User, error) {
+func (ur userRepository) GetAll() ([]domain.User, error) {
 	log := slog.With(
 		slog.String("func", "GetAll"),
 		slog.String("repository", "user"))
@@ -56,7 +56,7 @@ func (ur userRepository) GetAll() ([]models.User, error) {
 		log.Error("Error connecting to the database", err)
 		return nil, err
 	}
-	var users []models.User
+	var users []domain.User
 
 	result := db.Find(&users)
 
@@ -75,7 +75,7 @@ func (ur userRepository) GetAll() ([]models.User, error) {
 	return users, nil
 }
 
-func (ur userRepository) GetById(id string) (*models.User, error) {
+func (ur userRepository) GetById(id string) (*domain.User, error) {
 	log := slog.With(
 		slog.String("func", "GetById"),
 		slog.String("repository", "user"))
@@ -88,7 +88,7 @@ func (ur userRepository) GetById(id string) (*models.User, error) {
 		return nil, err
 	}
 
-	var user models.User
+	var user domain.User
 	err = db.Where("id = ?", id).First(&user).Error
 
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -103,7 +103,7 @@ func (ur userRepository) GetById(id string) (*models.User, error) {
 	return &user, nil
 }
 
-func (ur userRepository) GetByUsername(username string) (*models.User, error) {
+func (ur userRepository) GetByUsername(username string) (*domain.User, error) {
 	log := slog.With(
 		slog.String("func", "GetByNick"),
 		slog.String("repository", "user"))
@@ -116,7 +116,7 @@ func (ur userRepository) GetByUsername(username string) (*models.User, error) {
 		return nil, err
 	}
 
-	var user models.User
+	var user domain.User
 	err = db.Where("email = ? OR nick = ?", username, username).First(&user).Error
 
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -132,7 +132,7 @@ func (ur userRepository) GetByUsername(username string) (*models.User, error) {
 	return &user, nil
 }
 
-func (ur userRepository) GetByNameOrNick(nameOrNick string) ([]models.User, error) {
+func (ur userRepository) GetByNameOrNick(nameOrNick string) ([]domain.User, error) {
 	log := slog.With(
 		slog.String("func", "GetByName"),
 		slog.String("repository", "user"))
@@ -145,7 +145,7 @@ func (ur userRepository) GetByNameOrNick(nameOrNick string) ([]models.User, erro
 		return nil, err
 	}
 
-	var users []models.User
+	var users []domain.User
 	searchPattern := "%" + nameOrNick + "%"
 	err = db.Where("name LIKE ? OR nick LIKE ?", searchPattern, searchPattern).Find(&users).Error
 
@@ -162,7 +162,7 @@ func (ur userRepository) GetByNameOrNick(nameOrNick string) ([]models.User, erro
 	return users, nil
 }
 
-func (ur userRepository) GetByEmail(email string) (*models.User, error) {
+func (ur userRepository) GetByEmail(email string) (*domain.User, error) {
 	log := slog.With(
 		slog.String("func", "GetByEmail"),
 		slog.String("repository", "user"))
@@ -175,7 +175,7 @@ func (ur userRepository) GetByEmail(email string) (*models.User, error) {
 		return nil, err
 	}
 
-	var user models.User
+	var user domain.User
 	err = db.Where("email = ?", email).First(&user).Error
 
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -191,7 +191,7 @@ func (ur userRepository) GetByEmail(email string) (*models.User, error) {
 	return &user, nil
 }
 
-func (ur userRepository) Update(id string, user models.User) error {
+func (ur userRepository) Update(id string, user domain.User) error {
 	log := slog.With(
 		slog.String("func", "Create"),
 		slog.String("repository", "user"))
@@ -202,7 +202,7 @@ func (ur userRepository) Update(id string, user models.User) error {
 		return err
 	}
 
-	err = db.Model(&models.User{}).Where("id = ?", id).Updates(models.User{Name: user.Name, Email: user.Email}).Error
+	err = db.Model(&domain.User{}).Where("id = ?", id).Updates(domain.User{Name: user.Name, Email: user.Email}).Error
 	if err != nil {
 		log.Error("Error: ", err)
 		return err
@@ -224,7 +224,7 @@ func (ur userRepository) Delete(id string) error {
 		log.Error("Error: ", err)
 		return err
 	}
-	err = db.Delete(&models.User{}, "id = ?", id).Error
+	err = db.Delete(&domain.User{}, "id = ?", id).Error
 	if err != nil {
 		log.Error("Error: ", err)
 		return err
@@ -247,7 +247,7 @@ func (ur userRepository) UpdatePassword(id string, password string) error {
 		return err
 	}
 
-	err = db.Model(&models.User{}).Where("id = ?", id).Updates(models.User{Password: password}).Error
+	err = db.Model(&domain.User{}).Where("id = ?", id).Updates(domain.User{Password: password}).Error
 	if err != nil {
 		log.Error("Error: ", err)
 		return err
@@ -270,7 +270,7 @@ func (ur userRepository) ConfirmedEmail(id string) error {
 		return err
 	}
 
-	err = db.Model(&models.User{}).Where("id = ?", id).Updates(models.User{EmailConfirmed: true}).Error
+	err = db.Model(&domain.User{}).Where("id = ?", id).Updates(domain.User{EmailConfirmed: true}).Error
 	if err != nil {
 		log.Error("Error: ", err)
 		return err

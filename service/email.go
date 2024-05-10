@@ -5,15 +5,15 @@ import (
 	"strconv"
 
 	"github.com/OVillas/autentication/config"
-	"github.com/OVillas/autentication/models"
+	"github.com/OVillas/autentication/domain"
 )
 
 type emailService struct {
-	gmailSender models.GmailSender
+	gmailSender domain.GmailSender
 }
 
-func NewEmailService(name string, fromEmailAddress string, fromEmailPassword string) models.EmailService {
-	gmailSender := models.GmailSender{
+func NewEmailService(name string, fromEmailAddress string, fromEmailPassword string) domain.EmailService {
+	gmailSender := domain.GmailSender{
 		Name:              name,
 		FromEmailAddress:  fromEmailAddress,
 		FromEmailPassword: fromEmailPassword,
