@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/OVillas/autentication/config/database"
+	"github.com/OVillas/autentication/database"
 	"github.com/OVillas/autentication/models"
 	"gorm.io/gorm"
 )
@@ -107,7 +107,7 @@ func (ur userRepository) GetByUsername(username string) (*models.User, error) {
 	log := slog.With(
 		slog.String("func", "GetByNick"),
 		slog.String("repository", "user"))
-	
+
 	log.Info("GetByNick repository initiated")
 
 	db, err := database.NewMysqlConnection()
@@ -261,9 +261,9 @@ func (ur userRepository) ConfirmedEmail(id string) error {
 	log := slog.With(
 		slog.String("func", "UpdateConfirmedEmail"),
 		slog.String("repository", "user"))
-	
+
 	log.Info("UpdateConfirmedEmail repository initiated")
-	
+
 	db, err := database.NewMysqlConnection()
 	if err != nil {
 		log.Error("Error connecting to the database", err)
