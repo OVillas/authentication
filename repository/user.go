@@ -5,36 +5,30 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/OVillas/autentication/database"
 	"github.com/OVillas/autentication/domain"
 	"gorm.io/gorm"
 )
 
-type userRepository struct{}
-
-func NewUserRepository() domain.UserRepository {
-	return userRepository{}
+type userRepository struct {
+	db *gorm.DB
 }
 
-func (ur userRepository) Create(user domain.User) error {
+func NewUserRepository(db *gorm.DB) domain.UserRepository {
+	return &userRepository{db: db}
+}
+
+func (ur *userRepository) Create(user domain.User) error {
 	log := slog.With(
 		slog.String("func", "Create"),
 		slog.String("repository", "user"))
 
 	log.Info("Create repository initiated")
 
-	db, err := database.NewMysqlConnection()
-	if err != nil {
-		log.Error("Error connecting to the database", err)
-		return err
-	}
-
 	now := time.Now()
-
 	user.CreatedAt = now
 	user.UpdateAt = now
 
-	result := db.Create(&user)
+	result := ur.db.Create(&user)
 
 	if result.Error != nil {
 		log.Error("Error to create user in database", result.Error)
@@ -45,22 +39,18 @@ func (ur userRepository) Create(user domain.User) error {
 	return nil
 }
 
-func (ur userRepository) GetAll() ([]domain.User, error) {
+func (ur *userRepository) GetAll() ([]domain.User, error) {
 	log := slog.With(
 		slog.String("func", "GetAll"),
 		slog.String("repository", "user"))
 
 	log.Info("GetAll repository initiated")
-	db, err := database.NewMysqlConnection()
-	if err != nil {
-		log.Error("Error connecting to the database", err)
-		return nil, err
-	}
+
 	var users []domain.User
 
-	result := db.Find(&users)
+	result := ur.db.Find(&users)
 
-	err = result.Error
+	err := result.Error
 
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		log.Error("Error: ", err)
@@ -75,21 +65,15 @@ func (ur userRepository) GetAll() ([]domain.User, error) {
 	return users, nil
 }
 
-func (ur userRepository) GetById(id string) (*domain.User, error) {
+func (ur *userRepository) GetById(id string) (*domain.User, error) {
 	log := slog.With(
 		slog.String("func", "GetById"),
 		slog.String("repository", "user"))
 
 	log.Info("GetById repository initiated")
 
-	db, err := database.NewMysqlConnection()
-	if err != nil {
-		log.Error("Error connecting to the database", err)
-		return nil, err
-	}
-
 	var user domain.User
-	err = db.Where("id = ?", id).First(&user).Error
+	err := ur.db.Where("id = ?", id).First(&user).Error
 
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
@@ -103,21 +87,15 @@ func (ur userRepository) GetById(id string) (*domain.User, error) {
 	return &user, nil
 }
 
-func (ur userRepository) GetByUsername(username string) (*domain.User, error) {
+func (ur *userRepository) GetByUsername(username string) (*domain.User, error) {
 	log := slog.With(
 		slog.String("func", "GetByNick"),
 		slog.String("repository", "user"))
 
 	log.Info("GetByNick repository initiated")
 
-	db, err := database.NewMysqlConnection()
-	if err != nil {
-		log.Error("Error connecting to the database", err)
-		return nil, err
-	}
-
 	var user domain.User
-	err = db.Where("email = ? OR nick = ?", username, username).First(&user).Error
+	err := ur.db.Where("email = ? OR nick = ?", username, username).First(&user).Error
 
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		log.Error("Error: ", err)
@@ -132,22 +110,16 @@ func (ur userRepository) GetByUsername(username string) (*domain.User, error) {
 	return &user, nil
 }
 
-func (ur userRepository) GetByNameOrNick(nameOrNick string) ([]domain.User, error) {
+func (ur *userRepository) GetByNameOrNick(nameOrNick string) ([]domain.User, error) {
 	log := slog.With(
 		slog.String("func", "GetByName"),
 		slog.String("repository", "user"))
 
 	log.Info("GetByName repository initiated")
 
-	db, err := database.NewMysqlConnection()
-	if err != nil {
-		log.Error("Error connecting to the database", err)
-		return nil, err
-	}
-
 	var users []domain.User
 	searchPattern := "%" + nameOrNick + "%"
-	err = db.Where("name LIKE ? OR nick LIKE ?", searchPattern, searchPattern).Find(&users).Error
+	err := ur.db.Where("name LIKE ? OR nick LIKE ?", searchPattern, searchPattern).Find(&users).Error
 
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		log.Error("Error: ", err)
@@ -162,21 +134,15 @@ func (ur userRepository) GetByNameOrNick(nameOrNick string) ([]domain.User, erro
 	return users, nil
 }
 
-func (ur userRepository) GetByEmail(email string) (*domain.User, error) {
+func (ur *userRepository) GetByEmail(email string) (*domain.User, error) {
 	log := slog.With(
 		slog.String("func", "GetByEmail"),
 		slog.String("repository", "user"))
 
 	log.Info("GetByEmail repository initiated")
 
-	db, err := database.NewMysqlConnection()
-	if err != nil {
-		log.Error("Error connecting to the database", err)
-		return nil, err
-	}
-
 	var user domain.User
-	err = db.Where("email = ?", email).First(&user).Error
+	err := ur.db.Where("email = ?", email).First(&user).Error
 
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		log.Error("Error: ", err)
@@ -191,18 +157,13 @@ func (ur userRepository) GetByEmail(email string) (*domain.User, error) {
 	return &user, nil
 }
 
-func (ur userRepository) Update(id string, user domain.User) error {
+func (ur *userRepository) Update(id string, user domain.User) error {
 	log := slog.With(
 		slog.String("func", "Create"),
 		slog.String("repository", "user"))
 	log.Info("Update repository initiated")
-	db, err := database.NewMysqlConnection()
-	if err != nil {
-		log.Error("Error connecting to the database", err)
-		return err
-	}
 
-	err = db.Model(&domain.User{}).Where("id = ?", id).Updates(domain.User{Name: user.Name, Email: user.Email}).Error
+	err := ur.db.Model(&domain.User{}).Where("id = ?", id).Updates(domain.User{Name: user.Name, Email: user.Email}).Error
 	if err != nil {
 		log.Error("Error: ", err)
 		return err
@@ -212,19 +173,14 @@ func (ur userRepository) Update(id string, user domain.User) error {
 	return nil
 }
 
-func (ur userRepository) Delete(id string) error {
+func (ur *userRepository) Delete(id string) error {
 	log := slog.With(
 		slog.String("func", "Delete"),
 		slog.String("repository", "user"))
 
 	log.Info("Delete repository initiated")
 
-	db, err := database.NewMysqlConnection()
-	if err != nil {
-		log.Error("Error: ", err)
-		return err
-	}
-	err = db.Delete(&domain.User{}, "id = ?", id).Error
+	err := ur.db.Delete(&domain.User{}, "id = ?", id).Error
 	if err != nil {
 		log.Error("Error: ", err)
 		return err
@@ -234,20 +190,14 @@ func (ur userRepository) Delete(id string) error {
 	return nil
 }
 
-func (ur userRepository) UpdatePassword(id string, password string) error {
+func (ur *userRepository) UpdatePassword(id string, password string) error {
 	log := slog.With(
 		slog.String("func", "updatePassword"),
 		slog.String("repository", "user"))
 
 	log.Info("UpdatePassword repository initiated")
 
-	db, err := database.NewMysqlConnection()
-	if err != nil {
-		log.Error("Error connecting to the database", err)
-		return err
-	}
-
-	err = db.Model(&domain.User{}).Where("id = ?", id).Updates(domain.User{Password: password}).Error
+	err := ur.db.Model(&domain.User{}).Where("id = ?", id).Updates(domain.User{Password: password}).Error
 	if err != nil {
 		log.Error("Error: ", err)
 		return err
@@ -257,20 +207,14 @@ func (ur userRepository) UpdatePassword(id string, password string) error {
 	return nil
 }
 
-func (ur userRepository) ConfirmedEmail(id string) error {
+func (ur *userRepository) ConfirmedEmail(id string) error {
 	log := slog.With(
 		slog.String("func", "UpdateConfirmedEmail"),
 		slog.String("repository", "user"))
 
 	log.Info("UpdateConfirmedEmail repository initiated")
 
-	db, err := database.NewMysqlConnection()
-	if err != nil {
-		log.Error("Error connecting to the database", err)
-		return err
-	}
-
-	err = db.Model(&domain.User{}).Where("id = ?", id).Updates(domain.User{EmailConfirmed: true}).Error
+	err := ur.db.Model(&domain.User{}).Where("id = ?", id).Updates(domain.User{EmailConfirmed: true}).Error
 	if err != nil {
 		log.Error("Error: ", err)
 		return err

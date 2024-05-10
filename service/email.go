@@ -12,11 +12,11 @@ type emailService struct {
 	gmailSender domain.GmailSender
 }
 
-func NewEmailService(name string, fromEmailAddress string, fromEmailPassword string) domain.EmailService {
+func NewEmailService() domain.EmailService {
 	gmailSender := domain.GmailSender{
-		Name:              name,
-		FromEmailAddress:  fromEmailAddress,
-		FromEmailPassword: fromEmailPassword,
+		Name:              config.EmailSenderName,
+		FromEmailAddress:  config.EmailSender,
+		FromEmailPassword: config.EmailSenderPassword,
 	}
 
 	return &emailService{
