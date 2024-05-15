@@ -1,0 +1,585 @@
+basePath: /
+definitions:
+  domain.ConfirmCode:
+    properties:
+      code:
+        type: string
+      email:
+        type: string
+    required:
+    - code
+    - email
+    type: object
+  domain.ErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+      path:
+        type: string
+      timeStamp:
+        type: string
+      title:
+        type: string
+    type: object
+  domain.Login:
+    properties:
+      password:
+        type: string
+      username:
+        minLength: 6
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  domain.ResetPassword:
+    properties:
+      confirm:
+        minLength: 6
+        type: string
+      new:
+        minLength: 6
+        type: string
+    required:
+    - confirm
+    - new
+    type: object
+  domain.UpdatePassword:
+    properties:
+      current:
+        minLength: 6
+        type: string
+      new:
+        minLength: 6
+        type: string
+    required:
+    - current
+    - new
+    type: object
+  domain.UserPayLoad:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 75
+        minLength: 1
+        type: string
+      password:
+        minLength: 6
+        type: string
+      username:
+        maxLength: 75
+        minLength: 1
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - username
+    type: object
+  domain.UserResponse:
+    properties:
+      createdAt:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      isEmailConfirmed:
+        type: boolean
+      lastModified:
+        type: string
+      name:
+        type: string
+      username:
+        type: string
+    type: object
+  domain.UserUpdatePayLoad:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 75
+        minLength: 1
+        type: string
+      username:
+        maxLength: 75
+        minLength: 6
+        type: string
+    required:
+    - email
+    - username
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: API para gerenciamento de autenticação, incluindo registro de usuários,
+    login, confirmação de e-mail, e recuperação de senha.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Authentication Pulse Tech API
+  version: "1.0"
+paths:
+  /:
+    get:
+      consumes:
+      - '*/*'
+      description: get the status of server.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Show the status of server.
+      tags:
+      - HealthCheck
+  /v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return JWT token
+      parameters:
+      - description: Login Payload
+        in: body
+        name: login
+        required: true
+        schema:
+          $ref: '#/definitions/domain.Login'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: JWT Token
+          schema:
+            type: string
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Login a user
+      tags:
+      - authentication
+  /v1/auth/password:
+    post:
+      consumes:
+      - application/json
+      description: Send an OTP code to redeem your password
+      parameters:
+      - description: Confirmation Code Payload
+        in: body
+        name: confirmCode
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ConfirmCode'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: JWT Token
+          schema:
+            type: string
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Forgot user password
+      tags:
+      - authentication
+  /v1/auth/password/confirm:
+    post:
+      consumes:
+      - application/json
+      description: Confirm the reset password code sent to the user's email
+      parameters:
+      - description: Confirmation Code
+        in: body
+        name: confirmCode
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ConfirmCode'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: JWT Token
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Confirm reset password code
+      tags:
+      - authentication
+  /v1/users:
+    get:
+      description: Get all users in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.UserResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - bearerToken: []
+      summary: Get all users
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Create a new user in the system
+      parameters:
+      - description: User Payload
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UserPayLoad'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Create a new user
+      tags:
+      - users
+  /v1/users/{id}:
+    delete:
+      description: Delete a user by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - bearerToken: []
+      summary: Delete a user
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Update a user's information
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User Update Payload
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UserUpdatePayLoad'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - bearerToken: []
+      summary: Update a user
+      tags:
+      - users
+  /v1/users/email:
+    get:
+      consumes:
+      - application/json
+      description: Get a user by their email address
+      parameters:
+      - description: e
+        in: query
+        name: e
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - bearerToken: []
+      summary: Get user by email
+      tags:
+      - users
+  /v1/users/email/confirm:
+    post:
+      consumes:
+      - application/json
+      description: Confirm a user's email with the confirmation code
+      parameters:
+      - description: Confirmation Code Payload
+        in: body
+        name: confirmCode
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ConfirmCode'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - bearerToken: []
+      summary: Confirm user's email
+      tags:
+      - users
+  /v1/users/name:
+    get:
+      description: Get a user by name or username
+      parameters:
+      - description: Name or Username
+        in: query
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.UserResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - bearerToken: []
+      summary: Get user by name or username
+      tags:
+      - users
+  /v1/users/password/{id}:
+    patch:
+      consumes:
+      - application/json
+      description: Update password for authenticated users
+      parameters:
+      - description: Update Password Payload
+        in: body
+        name: updatePassword
+        required: true
+        schema:
+          $ref: '#/definitions/domain.UpdatePassword'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: JWT Token
+          schema:
+            type: string
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - bearerToken: []
+      summary: Update password user
+      tags:
+      - users
+  /v1/users/password/reset:
+    patch:
+      consumes:
+      - application/json
+      description: Reset the password for the authenticated user
+      parameters:
+      - description: Reset Password Data
+        in: body
+        name: resetPassword
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ResetPassword'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - bearerToken: []
+      summary: Reset user password
+      tags:
+      - authentication
+  /v1/users{id}:
+    get:
+      description: Get a user by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - bearerToken: []
+      summary: Get user by ID
+      tags:
+      - users
+schemes:
+- http
+securityDefinitions:
+  bearerToken:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

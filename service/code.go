@@ -22,14 +22,14 @@ type confirmationCodeService struct {
 	emailService   domain.EmailService
 }
 
-func NewCodeService(i *do.Injector) domain.ConfirmationCodeService {
+func NewCodeService(i *do.Injector) (domain.ConfirmationCodeService, error) {
 	emailService := do.MustInvoke[domain.EmailService](i)
 	userRepository := do.MustInvoke[domain.UserRepository](i)
 	return &confirmationCodeService{
 		i:              i,
 		emailService:   emailService,
 		userRepository: userRepository,
-	}
+	}, nil
 }
 
 func (ccs *confirmationCodeService) SendConfirmationCode(email string) error {

@@ -15,14 +15,14 @@ type userPasswordService struct {
 	confirmationCodeService domain.ConfirmationCodeService
 }
 
-func NewUserPasswordService(i *do.Injector) domain.UserPasswordService {
+func NewUserPasswordService(i *do.Injector) (domain.UserPasswordService, error) {
 	userRepository := do.MustInvoke[domain.UserRepository](i)
 	confimatioCodeService := do.MustInvoke[domain.ConfirmationCodeService](i)
 	return &userPasswordService{
 		i:                       i,
 		userRepository:          userRepository,
 		confirmationCodeService: confimatioCodeService,
-	}
+	}, nil
 }
 
 func (ups *userPasswordService) UpdatePassword(id string, updatePassword domain.UpdatePassword) error {
