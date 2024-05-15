@@ -28,7 +28,7 @@ func (ur *userRepository) Create(user domain.User) error {
 		slog.String("func", "Create"),
 		slog.String("repository", "user"))
 
-	log.Info("Create repository initiated")
+	log.Info("Create initiated")
 
 	now := time.Now()
 	user.CreatedAt = now
@@ -41,7 +41,7 @@ func (ur *userRepository) Create(user domain.User) error {
 		return result.Error
 	}
 
-	log.Info("create repository executed successfully")
+	log.Info("create executed successfully")
 	return nil
 }
 
@@ -50,7 +50,7 @@ func (ur *userRepository) GetAll() ([]domain.User, error) {
 		slog.String("func", "GetAll"),
 		slog.String("repository", "user"))
 
-	log.Info("GetAll repository initiated")
+	log.Info("GetAll initiated")
 
 	var users []domain.User
 
@@ -63,7 +63,7 @@ func (ur *userRepository) GetAll() ([]domain.User, error) {
 		return nil, err
 	}
 
-	log.Info("get all repository executed successfully")
+	log.Info("GetAll executed successfully")
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -76,7 +76,7 @@ func (ur *userRepository) GetById(id string) (*domain.User, error) {
 		slog.String("func", "GetById"),
 		slog.String("repository", "user"))
 
-	log.Info("GetById repository initiated")
+	log.Info("GetById initiated")
 
 	var user domain.User
 	err := ur.db.Where("id = ?", id).First(&user).Error
@@ -85,7 +85,7 @@ func (ur *userRepository) GetById(id string) (*domain.User, error) {
 		return nil, err
 	}
 
-	log.Info("get by id service executed successfully")
+	log.Info("getById executed successfully")
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -95,20 +95,20 @@ func (ur *userRepository) GetById(id string) (*domain.User, error) {
 
 func (ur *userRepository) GetByUsername(username string) (*domain.User, error) {
 	log := slog.With(
-		slog.String("func", "GetByNick"),
+		slog.String("func", "GetByUsername"),
 		slog.String("repository", "user"))
 
-	log.Info("GetByNick repository initiated")
+	log.Info("GetByUsername initiated")
 
 	var user domain.User
-	err := ur.db.Where("email = ? OR nick = ?", username, username).First(&user).Error
+	err := ur.db.Where("username = ?", username).First(&user).Error
 
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		log.Error("Error: ", err)
 		return nil, err
 	}
 
-	log.Info("get by username repository executed successfully")
+	log.Info("GetByUsername executed successfully")
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -116,23 +116,23 @@ func (ur *userRepository) GetByUsername(username string) (*domain.User, error) {
 	return &user, nil
 }
 
-func (ur *userRepository) GetByNameOrNick(nameOrNick string) ([]domain.User, error) {
+func (ur *userRepository) GetByNameOrUsername(nameOrUsername string) ([]domain.User, error) {
 	log := slog.With(
-		slog.String("func", "GetByName"),
+		slog.String("func", "GetByNameOrUsername"),
 		slog.String("repository", "user"))
 
-	log.Info("GetByName repository initiated")
+	log.Info("GetByNameOrUseraname initiated")
 
 	var users []domain.User
-	searchPattern := "%" + nameOrNick + "%"
-	err := ur.db.Where("name LIKE ? OR nick LIKE ?", searchPattern, searchPattern).Find(&users).Error
+	searchPattern := "%" + nameOrUsername + "%"
+	err := ur.db.Where("name LIKE ? OR username LIKE ?", searchPattern, searchPattern).Find(&users).Error
 
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		log.Error("Error: ", err)
 		return nil, err
 	}
 
-	log.Info("get by name repository executed successfully")
+	log.Info("GetByNameOrUsername executed successfully")
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -145,7 +145,7 @@ func (ur *userRepository) GetByEmail(email string) (*domain.User, error) {
 		slog.String("func", "GetByEmail"),
 		slog.String("repository", "user"))
 
-	log.Info("GetByEmail repository initiated")
+	log.Info("GetByEmail initiated")
 
 	var user domain.User
 	err := ur.db.Where("email = ?", email).First(&user).Error
@@ -155,7 +155,7 @@ func (ur *userRepository) GetByEmail(email string) (*domain.User, error) {
 		return nil, err
 	}
 
-	log.Info("get by email repository executed successfully")
+	log.Info("GetByEmail executed successfully")
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -167,7 +167,7 @@ func (ur *userRepository) Update(id string, user domain.User) error {
 	log := slog.With(
 		slog.String("func", "Create"),
 		slog.String("repository", "user"))
-	log.Info("Update repository initiated")
+	log.Info("Update initiated")
 
 	err := ur.db.Model(&domain.User{}).Where("id = ?", id).Updates(domain.User{Name: user.Name, Email: user.Email}).Error
 	if err != nil {
@@ -175,7 +175,7 @@ func (ur *userRepository) Update(id string, user domain.User) error {
 		return err
 	}
 
-	log.Info("update repository executed successfully")
+	log.Info("Update executed successfully")
 	return nil
 }
 
@@ -184,7 +184,7 @@ func (ur *userRepository) Delete(id string) error {
 		slog.String("func", "Delete"),
 		slog.String("repository", "user"))
 
-	log.Info("Delete repository initiated")
+	log.Info("Delete initiated")
 
 	err := ur.db.Delete(&domain.User{}, "id = ?", id).Error
 	if err != nil {
@@ -192,7 +192,7 @@ func (ur *userRepository) Delete(id string) error {
 		return err
 	}
 
-	log.Info("delete repository executed successfully")
+	log.Info("Delete executed successfully")
 	return nil
 }
 
@@ -201,7 +201,7 @@ func (ur *userRepository) UpdatePassword(id string, password string) error {
 		slog.String("func", "updatePassword"),
 		slog.String("repository", "user"))
 
-	log.Info("UpdatePassword repository initiated")
+	log.Info("UpdatePassword initiated")
 
 	err := ur.db.Model(&domain.User{}).Where("id = ?", id).Updates(domain.User{Password: password}).Error
 	if err != nil {
@@ -209,16 +209,16 @@ func (ur *userRepository) UpdatePassword(id string, password string) error {
 		return err
 	}
 
-	log.Info("update password repository executed successfully")
+	log.Info("UpdatePassword executed successfully")
 	return nil
 }
 
 func (ur *userRepository) ConfirmedEmail(id string) error {
 	log := slog.With(
-		slog.String("func", "UpdateConfirmedEmail"),
+		slog.String("func", "ConfirmedEmail"),
 		slog.String("repository", "user"))
 
-	log.Info("UpdateConfirmedEmail repository initiated")
+	log.Info("ConfirmedEmail initiated")
 
 	err := ur.db.Model(&domain.User{}).Where("id = ?", id).Updates(domain.User{EmailConfirmed: true}).Error
 	if err != nil {
@@ -226,6 +226,6 @@ func (ur *userRepository) ConfirmedEmail(id string) error {
 		return err
 	}
 
-	log.Info("update confirmed email repository executed successfully")
+	log.Info("ConfirmedEmail executed successfully")
 	return nil
 }
