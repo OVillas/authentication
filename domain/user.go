@@ -52,7 +52,7 @@ func (User) TableName() string {
 
 type UserPayLoad struct {
 	Name     string `json:"name,omitempty" validate:"required,min=1,max=75"`
-	Nick     string `json:"username,omitempty" validate:"required,min=1,max=75"`
+	Username string `json:"username,omitempty" validate:"required,min=1,max=75"`
 	Email    string `json:"email,omitempty" validate:"required,email"`
 	Password string `json:"password,omitempty" validate:"required,min=6,containsany=!@#&?"`
 }
@@ -73,78 +73,41 @@ type UserResponse struct {
 	LastModified     string
 }
 
-type UserInfosResponse struct {
-	Name string
-	Nick string
-}
-
 type Login struct {
 	Username string `json:"username,omitempty" validate:"required,min=6"`
 	Password string `json:"password,omitempty" validate:"required"`
 }
 
-type UpdatePassword struct {
-	Current string `json:"current,omitempty" validate:"required,min=6,containsany=!@#&?"`
-	New     string `json:"new,omitempty" validate:"required,min=6,containsany=!@#&?"`
-}
-
-type ResetPassword struct {
-	New     string `json:"new,omitempty" validate:"required,min=6,containsany=!@#&?"`
-	Confirm string `json:"confirm,omitempty" validate:"required,min=6,containsany=!@#&?"`
-}
-
-type ConfirmationCode struct {
-	Code       string
-	ExpiryTime time.Time
-}
-
-type ConfirmCode struct {
-	Email string `json:"email,omitempty" validate:"required,email"`
-	Code  string `json:"code,omitempty" validate:"required"`
-}
-
-type RequestResetPassword struct {
-	Email string `json:"email,omitempty" validate:"required,email"`
-}
-
 type UserHandler interface {
 	Create(ctx echo.Context) error
 	GetById(ctx echo.Context) error
-	GetByNameOrNick(ctx echo.Context) error
+	GetByNameOrUsername(ctx echo.Context) error
 	GetByEmail(ctx echo.Context) error
 	GetAll(ctx echo.Context) error
 	Update(ctx echo.Context) error
 	Delete(ctx echo.Context) error
 	Login(ctx echo.Context) error
-	UpdatePassword(ctx echo.Context) error
-	ConfirmEmail(ctx echo.Context) error
-	ForgotPassword(ctx echo.Context) error
-	ConfirmResetPasswordCode(ctx echo.Context) error
-	ResetPassword(ctx echo.Context) error
+	ConfirmEmail(c echo.Context) error
 }
 
 type UserService interface {
 	Create(userPayLoad UserPayLoad) error
 	GetById(id string) (*UserResponse, error)
-	GetByNameOrNick(nameOrNick string) ([]UserResponse, error)
+	GetByNameOrUsername(nameOrUsername string) ([]UserResponse, error)
 	GetByEmail(email string) (*UserResponse, error)
 	GetByUsername(username string) (*UserResponse, error)
 	GetAll() ([]UserResponse, error)
 	Update(id string, userUpdate UserUpdatePayLoad) error
 	Delete(id string) error
 	Login(login Login) (string, error)
-	UpdatePassword(id string, updatePassword UpdatePassword) error
-	SendConfirmationCode(email string) error
 	ConfirmEmail(confirmCode ConfirmCode) error
-	ConfirmResetPasswordCode(confirmCode ConfirmCode) (string, error)
-	ResetPassword(userId string, resetPassword ResetPassword) error
 	CheckUserIDMatch(idFromToken string) error
 }
 
 type UserRepository interface {
 	Create(user User) error
 	GetById(id string) (*User, error)
-	GetByNameOrNick(nameOrNick string) ([]User, error)
+	GetByNameOrUsername(nameOrUsername string) ([]User, error)
 	GetByEmail(email string) (*User, error)
 	GetByUsername(username string) (*User, error)
 	GetAll() ([]User, error)
@@ -173,7 +136,7 @@ func (upl *UserPayLoad) ToUser(hashedPassword string) (*User, error) {
 		ID:       id.String(),
 		Name:     strings.TrimSpace(upl.Name),
 		Email:    strings.TrimSpace(upl.Email),
-		Username: strings.TrimSpace(upl.Nick),
+		Username: strings.TrimSpace(upl.Username),
 		Password: strings.TrimSpace(hashedPassword),
 	}, nil
 }
@@ -198,34 +161,12 @@ func (u *User) ToUserResponse() *UserResponse {
 	}
 }
 
-func (u *User) ToUserInfosResponse() *UserInfosResponse {
-	return &UserInfosResponse{
-		Name: u.Name,
-		Nick: u.Username,
-	}
-}
-
 func (l *Login) Validate() error {
 	validate := validator.New()
 	return validate.Struct(l)
 }
 
-func (rrp *RequestResetPassword) Validate() error {
-	validate := validator.New()
-	return validate.Struct(rrp)
-}
-
-func (up *UpdatePassword) Validate() error {
-	validate := validator.New()
-	return validate.Struct(up)
-}
-
 func (ce *ConfirmCode) Validate() error {
 	validate := validator.New()
 	return validate.Struct(ce)
-}
-
-func (rp *ResetPassword) Validate() error {
-	validate := validator.New()
-	return validate.Struct(rp)
 }

@@ -1,9 +1,7 @@
 package service
 
 import (
-	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/OVillas/autentication/domain"
 	"github.com/OVillas/autentication/secure"
@@ -11,25 +9,22 @@ import (
 	"github.com/samber/do"
 )
 
-var confirmationsCodes map[string]domain.ConfirmationCode
-
-func init() {
-	confirmationsCodes = make(map[string]domain.ConfirmationCode)
-}
-
 type userService struct {
-	i              *do.Injector
-	userRepository domain.UserRepository
-	emailService   domain.EmailService
+	i                     *do.Injector
+	userRepository        domain.UserRepository
+	emailService          domain.EmailService
+	confimatioCodeService domain.ConfirmationCodeService
 }
 
 func NewUserService(i *do.Injector) (domain.UserService, error) {
 	userRepository := do.MustInvoke[domain.UserRepository](i)
 	emailService := do.MustInvoke[domain.EmailService](i)
+	confimatioCodeService := do.MustInvoke[domain.ConfirmationCodeService](i)
 	return &userService{
-		i:              i,
-		userRepository: userRepository,
-		emailService:   emailService,
+		i:                     i,
+		userRepository:        userRepository,
+		emailService:          emailService,
+		confimatioCodeService: confimatioCodeService,
 	}, nil
 }
 
@@ -38,7 +33,7 @@ func (us *userService) Create(userPayLoad domain.UserPayLoad) error {
 		slog.String("service", "user"),
 		slog.String("func", "Create"))
 
-	log.Info("Create service initiated")
+	log.Info("Create initiated")
 
 	userResponse, err := us.userRepository.GetByEmail(userPayLoad.Email)
 	if err != nil {
@@ -69,7 +64,7 @@ func (us *userService) Create(userPayLoad domain.UserPayLoad) error {
 		return domain.ErrCreateUser
 	}
 
-	log.Info("success to create user")
+	log.Info("Create executed successfully")
 	return nil
 }
 
@@ -78,7 +73,7 @@ func (us *userService) GetAll() ([]domain.UserResponse, error) {
 		slog.String("service", "user"),
 		slog.String("func", "GetAll"))
 
-	log.Info("GetAll service initiated")
+	log.Info("GetAll initiated")
 
 	users, err := us.userRepository.GetAll()
 	if err != nil {
@@ -86,7 +81,7 @@ func (us *userService) GetAll() ([]domain.UserResponse, error) {
 		return nil, domain.ErrGetUser
 	}
 
-	log.Info("get all service executed successfully")
+	log.Info("get all executed successfully")
 	if users == nil {
 		return nil, nil
 	}
@@ -104,7 +99,7 @@ func (us *userService) GetById(id string) (*domain.UserResponse, error) {
 		slog.String("service", "user"),
 		slog.String("func", "GetById"))
 
-	log.Info("GetById service initiated")
+	log.Info("GetById initiated")
 
 	user, err := us.userRepository.GetById(id)
 	if err != nil {
@@ -112,7 +107,7 @@ func (us *userService) GetById(id string) (*domain.UserResponse, error) {
 		return nil, domain.ErrGetUser
 	}
 
-	log.Info("get all service executed successfully")
+	log.Info("GetById executed successfully")
 	if user == nil {
 		return nil, nil
 	}
@@ -122,20 +117,20 @@ func (us *userService) GetById(id string) (*domain.UserResponse, error) {
 	return userResponse, err
 }
 
-func (us *userService) GetByNameOrNick(name string) ([]domain.UserResponse, error) {
+func (us *userService) GetByNameOrUsername(name string) ([]domain.UserResponse, error) {
 	log := slog.With(
 		slog.String("service", "user"),
-		slog.String("func", "GetAll"))
+		slog.String("func", "GetByNameOrUsername"))
 
-	log.Info("GetAll service initiated")
+	log.Info("GetByNameOrUsername initiated")
 
-	users, err := us.userRepository.GetByNameOrNick(name)
+	users, err := us.userRepository.GetByNameOrUsername(name)
 	if err != nil {
 		log.Error("Error: ", err)
 		return nil, domain.ErrGetUser
 	}
 
-	log.Info("get all service executed successfully")
+	log.Info("GetByNameOrUsername executed successfully")
 	if users == nil {
 		return nil, nil
 	}
@@ -151,9 +146,9 @@ func (us *userService) GetByNameOrNick(name string) ([]domain.UserResponse, erro
 func (us *userService) GetByUsername(username string) (*domain.UserResponse, error) {
 	log := slog.With(
 		slog.String("service", "user"),
-		slog.String("func", "GetByEmail"))
+		slog.String("func", "GetByUsername"))
 
-	log.Info("GetByUsername service initiated")
+	log.Info("GetByUsername initiated")
 
 	user, err := us.userRepository.GetByUsername(username)
 	if err != nil {
@@ -161,7 +156,7 @@ func (us *userService) GetByUsername(username string) (*domain.UserResponse, err
 		return nil, domain.ErrGetUser
 	}
 
-	log.Info("get by email service executed successfully")
+	log.Info("GetByUsername executed successfully")
 	if user == nil {
 		return nil, nil
 	}
@@ -176,7 +171,7 @@ func (us *userService) GetByEmail(email string) (*domain.UserResponse, error) {
 		slog.String("service", "user"),
 		slog.String("func", "GetByEmail"))
 
-	log.Info("GetByEmail service initiated")
+	log.Info("GetByEmail initiated")
 
 	user, err := us.userRepository.GetByEmail(email)
 	if err != nil {
@@ -184,7 +179,7 @@ func (us *userService) GetByEmail(email string) (*domain.UserResponse, error) {
 		return nil, domain.ErrGetUser
 	}
 
-	log.Info("get by email service executed successfully")
+	log.Info("GetByEmail executed successfully")
 	if user == nil {
 		return nil, nil
 	}
@@ -199,7 +194,7 @@ func (us *userService) Update(id string, userUpdate domain.UserUpdatePayLoad) er
 		slog.String("service", "user"),
 		slog.String("func", "update"))
 
-	log.Info("Update service initiated")
+	log.Info("Update initiated")
 
 	user, err := us.userRepository.GetById(id)
 	if err != nil {
@@ -230,6 +225,8 @@ func (us *userService) Update(id string, userUpdate domain.UserUpdatePayLoad) er
 		return domain.ErrCreateUser
 	}
 
+	log.Info("Update executed successfully")
+
 	return nil
 }
 
@@ -238,7 +235,7 @@ func (us *userService) Delete(id string) error {
 		slog.String("service", "user"),
 		slog.String("func", "delete"))
 
-	log.Info("Delete service initiated")
+	log.Info("Delete initiated")
 
 	user, err := us.userRepository.GetById(id)
 	if err != nil {
@@ -256,6 +253,7 @@ func (us *userService) Delete(id string) error {
 		return domain.ErrDeleteUser
 	}
 
+	log.Info("Delete executed successfully")
 	return nil
 }
 
@@ -264,7 +262,7 @@ func (us *userService) Login(login domain.Login) (string, error) {
 		slog.String("service", "user"),
 		slog.String("func", "Login"))
 
-	log.Info("Login service initiated")
+	log.Info("Login initiated")
 	var user *domain.User
 	var err error
 
@@ -302,80 +300,14 @@ func (us *userService) Login(login domain.Login) (string, error) {
 	return token, nil
 }
 
-func (us *userService) UpdatePassword(id string, updatePassword domain.UpdatePassword) error {
-	log := slog.With(
-		slog.String("service", "user"),
-		slog.String("func", "Login"))
-
-	log.Info("Update password service initiated")
-
-	user, err := us.userRepository.GetById(id)
-	if err != nil {
-		log.Error("failed to get user by id")
-		return domain.ErrGetUser
-	}
-
-	if user == nil {
-		log.Warn("User not found with this id")
-		return domain.ErrUserNotFound
-	}
-
-	if err := secure.CheckPassword(user.Password, updatePassword.Current); err != nil {
-		log.Warn("current password not match ")
-		return domain.ErrPasswordNotMatch
-	}
-
-	newHashedPassword, err := secure.Hash(updatePassword.New)
-	if err != nil {
-		log.Error("Error trying to hashed password")
-		return domain.ErrHashPassword
-	}
-
-	if err := us.userRepository.UpdatePassword(id, string(newHashedPassword)); err != nil {
-		log.Error("Error: ", err)
-		return domain.ErrUpdatePassword
-	}
-
-	log.Info("Password updated successfully")
-	return nil
-}
-
-func (us *userService) SendConfirmationCode(email string) error {
-	log := slog.With(
-		slog.String("service", "user"),
-		slog.String("func", "SendConfirmationEmailCode"))
-
-	log.Info("SendingConfirmationEmail code service initiated")
-
-	otp := domain.ConfirmationCode{
-		Code:       util.GenerateOTP(6),
-		ExpiryTime: time.Now().Add(time.Hour),
-	}
-
-	us.addOrUpdateConfirmationCode(email, otp)
-
-	subject := "Confirmação de cadastro"
-	content := fmt.Sprintf("<h1>Olá!</h1><p>Seu código de confirmação é: <h2><b>%s</b></h2></p>", otp.Code)
-	to := []string{email}
-
-	err := us.emailService.SendEmail(subject, content, to)
-	if err != nil {
-		log.Error("Errors: ", err)
-		return domain.ErrToSendConfirmationCode
-	}
-	log.Info("Confirmation send successfully")
-
-	return nil
-}
-
 func (us *userService) ConfirmEmail(confirmCode domain.ConfirmCode) error {
 	log := slog.With(
 		slog.String("service", "user"),
 		slog.String("func", "ConfirmEmail"))
 
-	log.Info("ConfirmingEmail service initiated")
+	log.Info("Confirming email service initiated")
 
-	user, err := us.confirmCode(confirmCode)
+	user, err := us.confimatioCodeService.ConfirmCode(confirmCode)
 	if err != nil {
 		log.Error("Error: ", err)
 		return err
@@ -385,8 +317,7 @@ func (us *userService) ConfirmEmail(confirmCode domain.ConfirmCode) error {
 		log.Error("Error: ", err)
 		return err
 	}
-
-	log.Info("Confirmed email successfully")
+	log.Info("ConfirmEmail executed uccessfully")
 	return nil
 }
 
@@ -413,122 +344,6 @@ func (us *userService) CheckUserIDMatch(idFromToken string) error {
 		return domain.ErrUserIDMismatch
 	}
 
+	log.Info("CheckUserIDMatch executed successfully")
 	return nil
-}
-
-func (us *userService) ConfirmResetPasswordCode(confirmCode domain.ConfirmCode) (string, error) {
-	log := slog.With(
-		slog.String("service", "user"),
-		slog.String("func", "ConfirmResetPasswordCode"))
-
-	log.Info("Confirming reset password code service initiated")
-
-	user, err := us.confirmCode(confirmCode)
-	if err != nil {
-		log.Error("Error: ", err)
-		return "", err
-	}
-
-	log.Info("Code confirmed successfully")
-	token, err := util.CreateResetPasswordToken(*user)
-	if err != nil {
-		log.Error("Error trying to create reset password token jwt. Error: ", err)
-		return "", domain.ErrGenToken
-	}
-	return token, nil
-}
-
-func (us *userService) ResetPassword(userId string, resetPassword domain.ResetPassword) error {
-	log := slog.With(
-		slog.String("service", "user"),
-		slog.String("func", "ResetPassword"))
-
-	log.Info("Reset password service initiated")
-
-	user, err := us.userRepository.GetById(userId)
-	if err != nil {
-		log.Error("Failed to obtain user by id")
-		return domain.ErrGetUser
-	}
-
-	if user == nil {
-		log.Warn("User not found with this id")
-		return domain.ErrUserNotFound
-	}
-
-	if resetPassword.New != resetPassword.Confirm {
-		log.Warn("Passwords do not match")
-		return domain.ErrPasswordNotMatch
-	}
-
-	newHashedPassword, err := secure.Hash(resetPassword.New)
-	if err != nil {
-		log.Error("Error trying to hashed password")
-		return domain.ErrHashPassword
-	}
-
-	if err := us.userRepository.UpdatePassword(user.ID, string(newHashedPassword)); err != nil {
-		log.Error("Error: ", err)
-		return domain.ErrUpdatePassword
-	}
-
-	log.Info("Password reset successfully")
-	return nil
-}
-
-// Private session
-func (us *userService) addOrUpdateConfirmationCode(email string, code domain.ConfirmationCode) {
-	log := slog.With(
-		slog.String("service", "user"),
-		slog.String("func", "addOrUpdateConfirmationCode"))
-
-	log.Info("Add or updating confirmation code initiated")
-
-	if existingCode, ok := confirmationsCodes[email]; ok {
-		existingCode.Code = code.Code
-		existingCode.ExpiryTime = code.ExpiryTime
-		confirmationsCodes[email] = existingCode
-	} else {
-		confirmationsCodes[email] = code
-	}
-
-	log.Info("Confirmation code added or updated successfully")
-}
-
-func (us *userService) confirmCode(confirmCode domain.ConfirmCode) (*domain.User, error) {
-	log := slog.With(
-		slog.String("service", "user"),
-		slog.String("func", "confirmCode"))
-
-	log.Info("Confirming code service initiated")
-
-	user, err := us.userRepository.GetByEmail(confirmCode.Email)
-	if err != nil {
-		log.Warn("Failed to obtain user by email")
-		return nil, domain.ErrGetUser
-	}
-
-	if user == nil {
-		log.Warn("User not found with this email: " + confirmCode.Email)
-		return nil, domain.ErrUserNotFound
-	}
-
-	confirmationCode, ok := confirmationsCodes[confirmCode.Email]
-	if !ok {
-		log.Error("OTP not found with this email: " + confirmCode.Email)
-		return nil, domain.ErrOTPNotFound
-	}
-
-	if time.Now().After(confirmationCode.ExpiryTime) {
-		log.Warn("Token expired")
-		return nil, domain.ErrInvalidOTP
-	}
-
-	if confirmationCode.Code != confirmCode.Code {
-		log.Warn("incorrect token")
-		return nil, domain.ErrInvalidOTP
-	}
-
-	log.Info("Code confirmed successfully")
-	return user, nil
 }

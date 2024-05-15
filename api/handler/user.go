@@ -13,15 +13,18 @@ import (
 )
 
 type userHandler struct {
-	i           *do.Injector
-	userService domain.UserService
+	i                      *do.Injector
+	userService            domain.UserService
+	confirmatioCodeService domain.ConfirmationCodeService
 }
 
 func NewUserHandler(i *do.Injector) (domain.UserHandler, error) {
 	userService := do.MustInvoke[domain.UserService](i)
+	confimatioCodeService := do.MustInvoke[domain.ConfirmationCodeService](i)
 	return &userHandler{
-		i:           i,
-		userService: userService,
+		i:                      i,
+		userService:            userService,
+		confirmatioCodeService: confimatioCodeService,
 	}, nil
 }
 
@@ -29,6 +32,8 @@ func (uh *userHandler) Create(c echo.Context) error {
 	log := slog.With(
 		slog.String("func", "Create"),
 		slog.String("handler", "user"))
+
+	log.Info("Create initiated")
 
 	var userPayLoad domain.UserPayLoad
 	if err := c.Bind(&userPayLoad); err != nil {
@@ -53,7 +58,7 @@ func (uh *userHandler) Create(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	err = uh.userService.SendConfirmationCode(userPayLoad.Email)
+	err = uh.confirmatioCodeService.SendConfirmationCode(userPayLoad.Email)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
@@ -109,7 +114,7 @@ func (uh *userHandler) GetById(c echo.Context) error {
 	return c.JSON(http.StatusOK, userResponse)
 }
 
-func (uh *userHandler) GetByNameOrNick(c echo.Context) error {
+func (uh *userHandler) GetByNameOrUsername(c echo.Context) error {
 	log := slog.With(
 		slog.String("func", "GetByName"),
 		slog.String("handler", "user"))
@@ -121,7 +126,7 @@ func (uh *userHandler) GetByNameOrNick(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "The 'name' parameter is required")
 	}
 
-	userResponse, err := uh.userService.GetByNameOrNick(name)
+	userResponse, err := uh.userService.GetByNameOrUsername(name)
 	if err != nil {
 		log.Error("Error trying to call get user by name service.")
 		return c.JSON(http.StatusInternalServerError, err)
@@ -315,58 +320,6 @@ func (uh *userHandler) Login(c echo.Context) error {
 	return c.JSON(http.StatusOK, token)
 }
 
-func (uh *userHandler) UpdatePassword(c echo.Context) error {
-	log := slog.With(
-		slog.String("func", "UpdatePassword"),
-		slog.String("handler", "authentication"))
-
-	log.Info("UpdatePassword service initiated")
-
-	userId := c.Param("id")
-
-	if err := util.IsValidUUID(userId); err != nil {
-		log.Warn("Invalid params")
-		return c.JSON(http.StatusBadRequest, err)
-	}
-
-	userIdFromToken, err := util.ExtractUserIdFromToken(c)
-	if err != nil {
-		log.Warn("err to get user if from token")
-		return c.JSON(http.StatusUnauthorized, err)
-	}
-
-	if userId != userIdFromToken {
-		log.Warn("you cannot update the data of a user other than yourself")
-		return c.NoContent(http.StatusForbidden)
-	}
-
-	var updatePassword domain.UpdatePassword
-	if err := c.Bind(&updatePassword); err != nil {
-		log.Warn("Failed to bind user data to domain")
-		return c.JSON(http.StatusUnprocessableEntity, err)
-	}
-
-	if err := updatePassword.Validate(); err != nil {
-		log.Warn("invalid user data")
-		return c.JSON(http.StatusUnprocessableEntity, err)
-	}
-
-	err = uh.userService.UpdatePassword(userId, updatePassword)
-
-	if err != nil && errors.Is(err, domain.ErrUserNotFound) {
-		log.Error("Error: ", err)
-		return c.JSON(http.StatusNotFound, err)
-	}
-
-	if err != nil && errors.Is(err, domain.ErrPasswordNotMatch) {
-		log.Error("Error: ", err)
-		return c.JSON(http.StatusUnauthorized, err)
-	}
-
-	log.Info("UpdatePassword executed successfully")
-	return c.NoContent(http.StatusNoContent)
-}
-
 func (uh *userHandler) ConfirmEmail(c echo.Context) error {
 	log := slog.With(
 		slog.String("func", "ConfirmEmail"),
@@ -398,116 +351,5 @@ func (uh *userHandler) ConfirmEmail(c echo.Context) error {
 	}
 
 	log.Info("e-mail confirmed successfully")
-	return c.NoContent(http.StatusOK)
-}
-
-func (uh *userHandler) ForgotPassword(c echo.Context) error {
-	log := slog.With(
-		slog.String("func", "ForgotPassword"),
-		slog.String("handler", "authentication"))
-
-	log.Info("ForgotPassword service initiated")
-
-	var requestResetPassword domain.RequestResetPassword
-	if err := c.Bind(&requestResetPassword); err != nil {
-		log.Warn("Failed to bind requestResetPassword data to domain")
-		return c.JSON(http.StatusUnprocessableEntity, err)
-	}
-
-	if err := requestResetPassword.Validate(); err != nil {
-		log.Warn("Invalid requestResetPassword data")
-		return c.JSON(http.StatusUnprocessableEntity, err)
-	}
-
-	if err := uh.userService.SendConfirmationCode(requestResetPassword.Email); err != nil {
-		log.Error("Errors: ", err)
-		return c.JSON(http.StatusInternalServerError, err)
-	}
-
-	log.Info("Confirmation send successfully")
-	return c.NoContent(http.StatusOK)
-}
-
-func (uh *userHandler) ConfirmResetPasswordCode(c echo.Context) error {
-	log := slog.With(
-		slog.String("func", "ConfirmResetPasswordCode"),
-		slog.String("handler", "authentication"))
-
-	log.Info("ConfirmResetPasswordCode service initiated")
-
-	var confirmCode domain.ConfirmCode
-	if err := c.Bind(&confirmCode); err != nil {
-		log.Warn("Failed to bind confirmCode data to domain")
-		return c.JSON(http.StatusUnprocessableEntity, err)
-	}
-
-	if err := confirmCode.Validate(); err != nil {
-		log.Warn("Invalid confirmCode data")
-		return c.JSON(http.StatusUnprocessableEntity, err)
-	}
-
-	token, err := uh.userService.ConfirmResetPasswordCode(confirmCode)
-
-	if err != nil && errors.Is(err, domain.ErrOTPNotFound) {
-		log.Warn("OTP not found")
-		return c.NoContent(http.StatusNotFound)
-	}
-
-	if err != nil && errors.Is(err, domain.ErrInvalidOTP) {
-		log.Warn("Expired token or wrong token")
-		return c.NoContent(http.StatusUnauthorized)
-	}
-
-	if err != nil {
-		log.Error("Errors: ", err)
-		return c.JSON(http.StatusInternalServerError, err)
-	}
-
-	log.Info("Reset password code confirmed successfully")
-	return c.JSON(http.StatusOK, token)
-}
-
-func (uh *userHandler) ResetPassword(c echo.Context) error {
-	log := slog.With(
-		slog.String("func", "ResetPassword"),
-		slog.String("handler", "authentication"))
-
-	log.Info("ResetPassword service initiated")
-
-	userIdFromToken, err := util.ExtractUserIdFromToken(c)
-	if err != nil {
-		log.Warn("err to get user if from token")
-		return c.JSON(http.StatusUnauthorized, err)
-	}
-
-	var resetPassword domain.ResetPassword
-	if err := c.Bind(&resetPassword); err != nil {
-		log.Warn("Failed to bind resetPassword data to domain")
-		return c.JSON(http.StatusUnprocessableEntity, err)
-	}
-
-	if err := resetPassword.Validate(); err != nil {
-		log.Warn("Invalid resetPassword data")
-		return c.JSON(http.StatusUnprocessableEntity, err)
-	}
-
-	err = uh.userService.ResetPassword(userIdFromToken, resetPassword)
-
-	if err != nil && errors.Is(err, domain.ErrUserNotFound) {
-		log.Warn("User not found with this email")
-		return c.NoContent(http.StatusNotFound)
-	}
-
-	if err != nil && errors.Is(err, domain.ErrPasswordNotMatch) {
-		log.Warn("Password and confirm password do not match")
-		return c.NoContent(http.StatusUnprocessableEntity)
-	}
-
-	if err != nil {
-		log.Error("Errors: ", err)
-		return c.JSON(http.StatusInternalServerError, err)
-	}
-
-	log.Info("Password reset successfully")
 	return c.NoContent(http.StatusOK)
 }
