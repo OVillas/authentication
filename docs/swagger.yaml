@@ -243,6 +243,44 @@ paths:
       summary: Confirm reset password code
       tags:
       - authentication
+  /v1/auth/password/reset:
+    patch:
+      consumes:
+      - application/json
+      description: Reset the password for the authenticated user
+      parameters:
+      - description: Reset Password Data
+        in: body
+        name: resetPassword
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ResetPassword'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - bearerToken: []
+      summary: Reset user password
+      tags:
+      - authentication
   /v1/users:
     get:
       description: Get all users in the system
@@ -476,6 +514,11 @@ paths:
       - application/json
       description: Update password for authenticated users
       parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
       - description: Update Password Payload
         in: body
         name: updatePassword
@@ -508,44 +551,6 @@ paths:
       summary: Update password user
       tags:
       - users
-  /v1/users/password/reset:
-    patch:
-      consumes:
-      - application/json
-      description: Reset the password for the authenticated user
-      parameters:
-      - description: Reset Password Data
-        in: body
-        name: resetPassword
-        required: true
-        schema:
-          $ref: '#/definitions/domain.ResetPassword'
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: No Content
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/domain.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/domain.ErrorResponse'
-        "422":
-          description: Unprocessable Entity
-          schema:
-            $ref: '#/definitions/domain.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/domain.ErrorResponse'
-      security:
-      - bearerToken: []
-      summary: Reset user password
-      tags:
-      - authentication
   /v1/users{id}:
     get:
       description: Get a user by ID

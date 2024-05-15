@@ -34,6 +34,7 @@ func NewUserPasswordHandler(i *do.Injector) (domain.UserPasswordHandler, error) 
 // @Tags users
 // @Accept json
 // @Produce json
+// @Param id path string true "User ID"
 // @Param updatePassword body domain.UpdatePassword true "Update Password Payload"
 // @Success 200 {object} string "JWT Token"
 // @Failure 422 {object} domain.ErrorResponse
@@ -265,7 +266,7 @@ func (uph *userPasswordHandler) ConfirmResetPasswordCode(c echo.Context) error {
 // @Failure 422 {object} domain.ErrorResponse "Unprocessable Entity"
 // @Failure 404 {object} domain.ErrorResponse "Not Found"
 // @Failure 500 {object} domain.ErrorResponse "Internal Server Error"
-// @Router /v1/users/password/reset [patch]
+// @Router /v1/auth/password/reset [patch]
 // @Security bearerToken
 func (uph *userPasswordHandler) ResetPassword(c echo.Context) error {
 	log := slog.With(
