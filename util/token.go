@@ -61,7 +61,7 @@ func extractToken(c echo.Context) string {
 	if length == 2 {
 		return strings.Split(token, " ")[1]
 	}
-
+												
 	return ""
 }
 
