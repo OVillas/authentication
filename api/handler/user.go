@@ -148,7 +148,7 @@ func (uh *userHandler) GetAll(c echo.Context) error {
 // @Success 200 {object} domain.UserResponse
 // @Failure 400 {object} domain.ErrorResponse
 // @Failure 500 {object} domain.ErrorResponse
-// @Router /v1/users{id} [get]
+// @Router /v1/users/{id} [get]
 // @Security bearerToken
 func (uh *userHandler) GetById(c echo.Context) error {
 	log := slog.With(
@@ -168,6 +168,73 @@ func (uh *userHandler) GetById(c echo.Context) error {
 	}
 
 	userResponse, err := uh.userService.GetById(id)
+	if err != nil {
+		log.Error("Error trying to call get user by id service.")
+		return c.JSON(http.StatusInternalServerError, domain.ErrorResponse{
+			Error:     "Error retrieving user by ID",
+			Message:   err.Error(),
+			TimeStamp: time.Now(),
+			Path:      c.Path(),
+		})
+	}
+
+	log.Info("User successfully retrieved")
+
+	if userResponse == nil {
+		return c.NoContent(http.StatusNoContent)
+	}
+
+	return c.JSON(http.StatusOK, userResponse)
+}
+
+// GetById godoc
+// @Summary Get user by ID
+// @Description Get a user by ID
+// @Tags users
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} domain.UserResponse
+// @Failure 400 {object} domain.ErrorResponse
+// @Failure 500 {object} domain.ErrorResponse
+// @Router /v1/user [get]
+// @Security bearerToken
+func (uh *userHandler) GetCredencials(c echo.Context) error {
+	log := slog.With(
+		slog.String("func", "GetCredencials"),
+		slog.String("handler", "user"))
+
+	idFromToken, err := util.ExtractUserIdFromToken(c)
+	if err != nil {
+		log.Warn("Error getting user ID from token")
+		return c.JSON(http.StatusUnauthorized, domain.ErrorResponse{
+			Error:     "Unauthorized",
+			Message:   err.Error(),
+			TimeStamp: time.Now(),
+			Path:      c.Path(),
+		})
+	}
+
+	if err := util.IsValidUUID(idFromToken); err != nil {
+		log.Warn("Invalid params")
+		return c.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Error:     "Invalid UUID",
+			Message:   err.Error(),
+			TimeStamp: time.Now(),
+			Path:      c.Path(),
+		})
+	}
+
+	if err := util.IsValidUUID(idFromToken); err != nil {
+		log.Warn("Invalid params")
+		return c.JSON(http.StatusBadRequest, domain.ErrorResponse{
+			Error:     "Invalid parameters",
+			Message:   err.Error(),
+			TimeStamp: time.Now(),
+			Path:      c.Path(),
+		})
+	}
+
+	userResponse, err := uh.userService.GetById(idFromToken)
 	if err != nil {
 		log.Error("Error trying to call get user by id service.")
 		return c.JSON(http.StatusInternalServerError, domain.ErrorResponse{

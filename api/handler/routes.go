@@ -27,6 +27,8 @@ func setupUserRoutes(e *echo.Echo, i *do.Injector) {
 	group.DELETE("/:id", userHandler.Delete, middleware.CheckLoggedIn)
 	group.PATCH("/:id/password", userPasswordHandler.UpdatePassword, middleware.CheckLoggedIn)
 	group.PATCH("/email/confirm", userHandler.ConfirmEmail)
+
+	e.GET("v1/user", userHandler.GetCredencials, middleware.CheckLoggedIn)
 }
 
 func setupAuthRoutes(e *echo.Echo, i *do.Injector) {

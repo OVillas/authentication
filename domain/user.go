@@ -64,13 +64,10 @@ type UserUpdatePayLoad struct {
 }
 
 type UserResponse struct {
-	Id               string
-	Name             string
-	Email            string
-	Username         string
-	IsEmailConfirmed bool
-	CreatedAt        string
-	LastModified     string
+	Id       string
+	Name     string
+	Email    string
+	Username string
 }
 
 type Login struct {
@@ -81,6 +78,7 @@ type Login struct {
 type UserHandler interface {
 	Create(ctx echo.Context) error
 	GetById(ctx echo.Context) error
+	GetCredencials(ctx echo.Context) error
 	GetByNameOrUsername(ctx echo.Context) error
 	GetByEmail(ctx echo.Context) error
 	GetAll(ctx echo.Context) error
@@ -151,13 +149,10 @@ func (uu *UserUpdatePayLoad) ToUser() *User {
 
 func (u *User) ToUserResponse() *UserResponse {
 	return &UserResponse{
-		Id:               u.ID,
-		Name:             u.Name,
-		Email:            u.Email,
-		Username:         u.Username,
-		IsEmailConfirmed: u.EmailConfirmed,
-		CreatedAt:        u.CreatedAt.Format("2006-01-02 15:04:05"),
-		LastModified:     u.UpdateAt.Format("2006-01-02 15:04:05"),
+		Id:       u.ID,
+		Name:     u.Name,
+		Email:    u.Email,
+		Username: u.Username,
 	}
 }
 

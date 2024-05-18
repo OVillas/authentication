@@ -11,7 +11,6 @@ import (
 
 func CheckLoggedIn(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
-
 		authorizationHeader := ctx.Request().Header.Get("Authorization")
 
 		if authorizationHeader == "" {
@@ -30,7 +29,12 @@ func CheckLoggedIn(next echo.HandlerFunc) echo.HandlerFunc {
 		})
 
 		if err != nil {
-			return ctx.NoContent(http.StatusUnauthorized)
+			if ve, ok := err.(*jwt.ValidationError); ok {
+				if ve.Errors&jwt.ValidationErrorExpired != 0 {
+					return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "token expired"})
+				}
+			}
+			return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid token"})
 		}
 
 		if !token.Valid {
