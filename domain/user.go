@@ -8,6 +8,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 var (
@@ -39,15 +40,26 @@ type User struct {
 	Name                string    `gorm:"column:Name;type:varchar(75)"`
 	Username            string    `gorm:"column:Username;type:varchar(255);unique_index"`
 	Email               string    `gorm:"column:Email;type:varchar(255);unique_index"`
-	Password            string    `gorm:"column:Password;type:varchar(255)"`
+	Password            string    `gorm:"column:PasswordHash;type:varchar(255)"`
 	EmailConfirmed      bool      `gorm:"column:EmailConfirmed;type:boolean"`
 	TwoFactorAuthActive bool      `gorm:"column:TwoFactorAuthActive;type:boolean"`
+	Active              bool      `gorm:"column:Active;type:boolean;default:true"`
 	CreatedAt           time.Time `gorm:"column:CreatedAt"`
 	UpdateAt            time.Time `gorm:"column:UpdateAt"`
 }
 
 func (User) TableName() string {
 	return "user"
+}
+
+func (u *User) Normalize() {
+	u.Username = strings.ToLower(strings.TrimSpace(u.Username))
+	u.Email = strings.ToLower(strings.TrimSpace(u.Email))
+}
+
+func (u *User) BeforeSave(tx *gorm.DB) (err error) {
+	u.Normalize()
+	return
 }
 
 type UserPayLoad struct {
